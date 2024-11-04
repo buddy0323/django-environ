@@ -20,6 +20,8 @@ Added
   `#535 <https://github.com/joke2k/django-environ/issues/535>`_.
 - Add support for Django CockroachDB driver
   `#509 <https://github.com/joke2k/django-environ/issues/509>`_.
+- Add support for Django Channels
+  `#266 <https://github.com/joke2k/django-environ/issues/266>`_.
 
 Changed
 +++++++
