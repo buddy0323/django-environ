@@ -191,7 +191,7 @@ class Env:
     CLOUDSQL = 'cloudsql'
 
     DEFAULT_CHANNELS_ENV = "CHANNELS_URL"
-    CHANNELS_SCHEMES =  {
+    CHANNELS_SCHEMES = {
         "inmemory": "channels.layers.InMemoryChannelLayer",
         "redis": "channels_redis.core.RedisChannelLayer",
         "redis+pubsub": "channels_redis.pubsub.RedisPubSubChannelLayer"
@@ -345,7 +345,8 @@ class Env:
             engine=engine
         )
 
-    def channels_url(self, var=DEFAULT_CHANNELS_ENV, default=NOTSET, backend=None):
+    def channels_url(self, var=DEFAULT_CHANNELS_ENV, default=NOTSET,
+                     backend=None):
         """Returns a config dictionary, defaulting to CHANNELS_URL.
 
         :rtype: dict
@@ -755,7 +756,7 @@ class Env:
             config['OPTIONS'] = config_options
 
         return config
-    
+
     @classmethod
     def channels_url_config(cls, url, backend=None):
         """Parse an arbitrary channels URL.
@@ -769,7 +770,7 @@ class Env:
         """
         config = {}
         url = urlparse(url) if not isinstance(url, cls.URL_CLASS) else url
-        
+
         if backend:
             config["BACKEND"] = backend
         elif url.scheme not in cls.CHANNELS_SCHEMES:
@@ -856,7 +857,7 @@ class Env:
         :param urllib.parse.ParseResult or str url:
             Search URL to parse.
         :param str or None engine:
-            If None, the engine is evaluates from the ``url``.
+            If None, the engine is evaluating from the ``url``.
         :return: Parsed search URL.
         :rtype: dict
         """
