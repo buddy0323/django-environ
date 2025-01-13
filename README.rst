@@ -97,7 +97,8 @@ approach, some connection strings are expressed as url, so this package can pars
 it and return a ``urllib.parse.ParseResult``. These strings from ``os.environ``
 are loaded from a ``.env`` file and filled in ``os.environ`` with ``setdefault``
 method, to avoid to overwrite the real environ.
-A similar approach is used in `Two Scoops of Django <https://www.feldroy.com/books/two-scoops-of-django-3-x>`_
+A similar approach is used in
+`Two Scoops of Django <https://web.archive.org/web/20240121133956/https://www.feldroy.com/books/two-scoops-of-django-3-x>`_
 book and explained in `12factor-django <https://wellfire.co/learn/easier-12-factor-django>`_
 article.
 
@@ -126,8 +127,8 @@ its documentation lives at `Read the Docs <https://django-environ.readthedocs.io
 the code on `GitHub <https://github.com/joke2k/django-environ>`_,
 and the latest release on `PyPI <https://pypi.org/project/django-environ/>`_.
 
-It’s rigorously tested on Python 3.6+, and officially supports
-Django 1.11, 2.2, 3.0, 3.1, 3.2, 4.0, 4.1 and 4.2.
+It’s rigorously tested on Python 3.9+, and officially supports
+Django 2.2, 3.0, 3.1, 3.2, 4.0, 4.1, 4.2, 5.0, and 5.1.
 
 If you'd like to contribute to ``django-environ`` you're most welcome!
 

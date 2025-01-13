@@ -1,6 +1,6 @@
 # This file is part of the django-environ.
 #
-# Copyright (c) 2021-2022, Serghei Iakovlev <egrep@protonmail.ch>
+# Copyright (c) 2021-2024, Serghei Iakovlev <oss@serghei.pl>
 # Copyright (c) 2013-2021, Daniele Faraglia <daniele.faraglia@gmail.com>
 #
 # For the full copyright and license information, please view
@@ -115,6 +115,7 @@ class Env:
         'psql': DJANGO_POSTGRES,
         'pgsql': DJANGO_POSTGRES,
         'postgis': 'django.contrib.gis.db.backends.postgis',
+        'cockroachdb': 'django_cockroachdb',
         'mysql': 'django.db.backends.mysql',
         'mysql2': 'django.db.backends.mysql',
         'mysql-connector': 'mysql.connector.django',
@@ -188,6 +189,13 @@ class Env:
                             if scheme.startswith("elasticsearch")
                             for s in ('', 's')]
     CLOUDSQL = 'cloudsql'
+
+    DEFAULT_CHANNELS_ENV = "CHANNELS_URL"
+    CHANNELS_SCHEMES = {
+        "inmemory": "channels.layers.InMemoryChannelLayer",
+        "redis": "channels_redis.core.RedisChannelLayer",
+        "redis+pubsub": "channels_redis.pubsub.RedisPubSubChannelLayer"
+    }
 
     def __init__(self, **scheme):
         self.smart_cast = True
@@ -337,6 +345,19 @@ class Env:
             engine=engine
         )
 
+    def channels_url(self, var=DEFAULT_CHANNELS_ENV, default=NOTSET,
+                     backend=None):
+        """Returns a config dictionary, defaulting to CHANNELS_URL.
+
+        :rtype: dict
+        """
+        return self.channels_url_config(
+            self.url(var, default=default),
+            backend=backend
+        )
+
+    channels = channels_url
+
     def path(self, var, default=NOTSET, **kwargs):
         """
         :rtype: Path
@@ -388,7 +409,7 @@ class Env:
             value = self.ENVIRON[var_name]
         except KeyError as exc:
             if default is self.NOTSET:
-                error_msg = f'Set the {var} environment variable'
+                error_msg = f'Set the {var_name} environment variable'
                 raise ImproperlyConfigured(error_msg) from exc
 
             value = default
@@ -737,6 +758,33 @@ class Env:
         return config
 
     @classmethod
+    def channels_url_config(cls, url, backend=None):
+        """Parse an arbitrary channels URL.
+
+        :param urllib.parse.ParseResult or str url:
+            Email URL to parse.
+        :param str or None backend:
+            If None, the backend is evaluates from the ``url``.
+        :return: Parsed channels URL.
+        :rtype: dict
+        """
+        config = {}
+        url = urlparse(url) if not isinstance(url, cls.URL_CLASS) else url
+
+        if backend:
+            config["BACKEND"] = backend
+        elif url.scheme not in cls.CHANNELS_SCHEMES:
+            raise ImproperlyConfigured(f"Invalid channels schema {url.scheme}")
+        else:
+            config["BACKEND"] = cls.CHANNELS_SCHEMES[url.scheme]
+            if url.scheme in ("redis", "redis+pubsub"):
+                config["CONFIG"] = {
+                    "hosts": [url._replace(scheme="redis").geturl()]
+                }
+
+        return config
+
+    @classmethod
     def _parse_common_search_params(cls, url):
         cfg = {}
         prs = {}
@@ -809,7 +857,7 @@ class Env:
         :param urllib.parse.ParseResult or str url:
             Search URL to parse.
         :param str or None engine:
-            If None, the engine is evaluates from the ``url``.
+            If None, the engine is evaluating from the ``url``.
         :return: Parsed search URL.
         :rtype: dict
         """
@@ -862,8 +910,8 @@ class Env:
         return config
 
     @classmethod
-    def read_env(cls, env_file=None, overwrite=False, encoding='utf8',
-                 **overrides):
+    def read_env(cls, env_file=None, overwrite=False, parse_comments=False,
+                 encoding='utf8', **overrides):
         r"""Read a .env file into os.environ.
 
         If not given a path to a dotenv path, does filthy magic stack
@@ -883,6 +931,8 @@ class Env:
             the Django settings module from the Django project root.
         :param overwrite: ``overwrite=True`` will force an overwrite of
             existing environment variables.
+        :param parse_comments: Determines whether to recognize and ignore
+           inline comments in the .env file. Default is False.
         :param encoding: The encoding to use when reading the environment file.
         :param \**overrides: Any additional keyword arguments provided directly
             to read_env will be added to the environment. If the key matches an
@@ -927,22 +977,40 @@ class Env:
         for line in content.splitlines():
             m1 = re.match(r'\A(?:export )?([A-Za-z_0-9]+)=(.*)\Z', line)
             if m1:
+
+                # Example:
+                #
+                # line: KEY_499=abc#def
+                # key:  KEY_499
+                # val:  abc#def
                 key, val = m1.group(1), m1.group(2)
-                # Look for value in quotes, ignore post-# comments
-                # (outside quotes)
-                m2 = re.match(r"\A\s*'(?<!\\)(.*)'\s*(#.*\s*)?\Z", val)
-                if m2:
-                    val = m2.group(1)
+
+                if not parse_comments:
+                    # Default behavior
+                    #
+                    # Look for value in single quotes
+                    m2 = re.match(r"\A'(.*)'\Z", val)
+                    if m2:
+                        val = m2.group(1)
                 else:
-                    # For no quotes, find value, ignore comments
-                    # after the first #
-                    m2a = re.match(r"\A(.*?)(#.*\s*)?\Z", val)
-                    if m2a:
-                        val = m2a.group(1)
+                    # Ignore post-# comments (outside quotes).
+                    # Something like ['val'  # comment] becomes ['val'].
+                    m2 = re.match(r"\A\s*'(?<!\\)(.*)'\s*(#.*\s*)?\Z", val)
+                    if m2:
+                        val = m2.group(1)
+                    else:
+                        # For no quotes, find value, ignore comments
+                        # after the first #
+                        m2a = re.match(r"\A(.*?)(#.*\s*)?\Z", val)
+                        if m2a:
+                            val = m2a.group(1)
+
+                # Look for value in double quotes
                 m3 = re.match(r'\A"(.*)"\Z', val)
                 if m3:
                     val = re.sub(r'\\(.)', _keep_escaped_format_characters,
                                  m3.group(1))
+
                 overrides[key] = str(val)
             elif not line or line.startswith('#'):
                 # ignore warnings for empty line-breaks or comments

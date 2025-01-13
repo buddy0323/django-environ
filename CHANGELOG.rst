@@ -5,8 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is inspired by `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_
 and this project adheres to `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_.
 
+`v0.12.0`_ - 8-November-2024
+-----------------------------
+Fixed
++++++
+- Include prefix in the ``ImproperlyConfigured`` error message
+  `#513 <https://github.com/joke2k/django-environ/issues/513>`_.
+
+Added
++++++
+- Add support for Python 3.12 and 3.13
+  `#538 <https://github.com/joke2k/django-environ/issues/538>`_.
+- Add support for Django 5.1
+  `#535 <https://github.com/joke2k/django-environ/issues/535>`_.
+- Add support for Django CockroachDB driver
+  `#509 <https://github.com/joke2k/django-environ/issues/509>`_.
+- Add support for Django Channels
+  `#266 <https://github.com/joke2k/django-environ/issues/266>`_.
+
+Changed
++++++++
+- Disabled inline comments handling by default due to potential side effects.
+  While the feature itself is useful, the project's philosophy dictates that
+  it should not be enabled by default for all users
+  `#499 <https://github.com/joke2k/django-environ/issues/499>`_.
+
+Removed
++++++++
+- Removed support of Python 3.6, 3.7 and 3.8
+  `#538 <https://github.com/joke2k/django-environ/issues/538>`_.
+- Removed support of Django 1.x.
+  `#538 <https://github.com/joke2k/django-environ/issues/538>`_.
+
+
 `v0.11.2`_ - 1-September-2023
--------------------------------
+-----------------------------
 Fixed
 +++++
 - Revert "Add variable expansion." feature
@@ -31,7 +64,7 @@ Added
   `#463 <https://github.com/joke2k/django-environ/pull/463>`_.
 - Added variable expansion
   `#468 <https://github.com/joke2k/django-environ/pull/468>`_.
-- Added capability to handle comments after #, after quoted values,
+- Added capability to handle comments after ``#``, after quoted values,
   like ``KEY= 'part1 # part2' # comment``
   `#475 <https://github.com/joke2k/django-environ/pull/475>`_.
 - Added support for ``interpolate`` parameter
@@ -388,6 +421,7 @@ Added
 - Initial release.
 
 
+.. _v0.12.0: https://github.com/joke2k/django-environ/compare/v0.11.2...v0.12.0
 .. _v0.11.2: https://github.com/joke2k/django-environ/compare/v0.11.1...v0.11.2
 .. _v0.11.1: https://github.com/joke2k/django-environ/compare/v0.11.0...v0.11.1
 .. _v0.11.0: https://github.com/joke2k/django-environ/compare/v0.10.0...v0.11.0
